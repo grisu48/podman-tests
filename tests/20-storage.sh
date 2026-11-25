@@ -28,12 +28,12 @@ test_volume_persistence() {
 test_bind_mount() {
   local dir; dir=$(mktemp -d "/tmp/${PREFIX}bind.XXXXXX")
   echo known-content > "$dir/f"
-  engine run --rm -v "$dir:/data:ro" "$IMAGE_BUSYBOX" cat /data/f
+  engine run --rm -v "$dir:/data:ro,z" "$IMAGE_BUSYBOX" cat /data/f
   assert_eq "host file readable inside" known-content "$LAST_OUT" || { rm -rf "$dir"; return 1; }
-  engine run --rm -v "$dir:/data" "$IMAGE_BUSYBOX" sh -c 'echo written > /data/g'
+  engine run --rm -v "$dir:/data:z" "$IMAGE_BUSYBOX" sh -c 'echo written > /data/g'
   assert_ok "container write succeeds" "$LAST_STATUS" || { rm -rf "$dir"; return 1; }
   assert_eq "write visible on host" written "$(cat "$dir/g" 2>/dev/null)" || { rm -rf "$dir"; return 1; }
-  engine run --rm -v "$dir:/data:ro" "$IMAGE_BUSYBOX" sh -c 'echo nope > /data/h'
+  engine run --rm -v "$dir:/data:ro,z" "$IMAGE_BUSYBOX" sh -c 'echo nope > /data/h'
   assert_fail "write into read-only mount fails" "$LAST_STATUS" || { rm -rf "$dir"; return 1; }
   if [ -e "$dir/h" ]; then fail_result "host unchanged" "no h file" "h file exists"; rm -rf "$dir"; return 1; fi
   rm -rf "$dir"
