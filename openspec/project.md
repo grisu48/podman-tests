@@ -11,6 +11,10 @@ Supported engines: `podman` (default) and `docker`.
 
 - Spec-first development: every change starts as an OpenSpec change under
   `openspec/changes/`, then is implemented and archived.
+- Internal unit tests are not required: the suite carries no unit tests
+  for its own code. The functional suite is itself the verification; a
+  change is verified by running it against a real engine, not by testing
+  the tests. No unit test framework may be introduced for that purpose.
 - The suite is written in plain bash. No test framework and no second
   implementation language.
 - Only standard Linux tools may be called: bash builtins and the

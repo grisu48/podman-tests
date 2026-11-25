@@ -24,6 +24,8 @@ Goals:
 Non-Goals:
 
 - Testing the images themselves, the kernel, or the registry.
+- Internal unit tests of the suite's own functions — not required; the
+  suite is verified by running it, per project conventions.
 - Performance, stress or soak testing.
 - Complete rootless coverage; rootless is a smoke test in this change.
 - Supporting engines other than podman and docker.
