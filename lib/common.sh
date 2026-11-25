@@ -21,7 +21,10 @@ die_image() {
 # Runs the selected engine, never fails under set -e: check $LAST_STATUS.
 engine() {
   LAST_CMD="$RUNTIME $*"
-  if LAST_OUT=$("$RUNTIME" "$@" 2>&1); then
+  # Some output (e.g. /proc/self/attr/current for SELinux contexts) carries a
+  # trailing NUL byte; strip it so command substitution doesn't warn about it.
+  # pipefail keeps $? as the engine's own exit status, not tr's.
+  if LAST_OUT=$(set -o pipefail; "$RUNTIME" "$@" 2>&1 | tr -d '\0'); then
     LAST_STATUS=0
   else
     LAST_STATUS=$?
