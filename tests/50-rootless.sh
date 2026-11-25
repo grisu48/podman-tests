@@ -41,15 +41,15 @@ test_rootless_run_and_mode() {
 
 test_rootless_userns_mapping() {
   rootless_user || return 0
-  local u=$ROOTLESS_RESOLVED_USER c uid pid owner
+  local u=$ROOTLESS_RESOLVED_USER c uid raw pid owner
   c=$(rname rootless-map); track container "$c"
   LAST_CMD="su - $u -c '$RUNTIME run --rm $IMAGE_BUSYBOX id -u'"
-  uid=$(su - "$u" -c "$RUNTIME run --rm $IMAGE_BUSYBOX id -u" 2>&1) || true
+  uid=$(su - "$u" -c "$RUNTIME run --rm $IMAGE_BUSYBOX id -u" 2>/dev/null)
   LAST_OUT=$uid
   assert_eq "effective uid inside is 0" 0 "$uid" || return 1
   LAST_CMD="su - $u -c '$RUNTIME run -d --name $c $IMAGE_BUSYBOX sleep 10'"
   su - "$u" -c "$RUNTIME run -d --name $c $IMAGE_BUSYBOX sleep 10" >/dev/null 2>&1 || true
-  pid=$(su - "$u" -c "$RUNTIME inspect $c --format '{{.State.Pid}}'" 2>&1) || true
+  pid=$(su - "$u" -c "$RUNTIME inspect $c --format '{{.State.Pid}}'" 2>/dev/null) || true
   owner=$(ps -o user= -p "$pid" 2>/dev/null | tr -d ' ') || true
   su - "$u" -c "$RUNTIME rm -f $c" >/dev/null 2>&1 || true
   LAST_OUT="host process pid $pid owned by '$owner'"
