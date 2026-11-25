@@ -85,6 +85,7 @@ test_port_publishing() {
   if body=$(curl -s --fail --connect-timeout 2 --max-time 5 -w '\n%{http_code}' "http://127.0.0.1:${port}/" 2>/dev/null); then
     status=${body##*$'\n'}
     body=${body%$'\n'*}
+    body=${body%$'\n'}
   else
     status=000
     body=""
