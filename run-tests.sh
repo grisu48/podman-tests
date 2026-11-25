@@ -89,6 +89,7 @@ trap run_cleanup EXIT INT TERM
 echo "# engine: $RUNTIME"
 [ "$IMAGE_BUSYBOX" != "registry.opensuse.org/opensuse/busybox" ] && echo "# image override: busybox=$IMAGE_BUSYBOX"
 [ "$IMAGE_TUMBLEWEED" != "registry.opensuse.org/opensuse/tumbleweed" ] && echo "# image override: tumbleweed=$IMAGE_TUMBLEWEED"
+[ "$IMAGE_NGINX" != "registry.opensuse.org/opensuse/nginx" ] && echo "# image override: nginx=$IMAGE_NGINX"
 
 n=0
 pass=0

@@ -124,20 +124,22 @@ port-publishing assertion and point at the wrong requirement.
 ### Images: busybox from registry.opensuse.org, Tumbleweed only when needed
 
 `registry.opensuse.org/opensuse/busybox` is the workhorse. It is an
-openSUSE image, it is tiny, and it already carries `httpd`, `nc`, `wget`,
-`ip` and `sh`. That removes any need to install a package inside a test
-container, which would otherwise require registry access from the
-container network and break the tool rule from the inside.
-`registry.opensuse.org/opensuse/tumbleweed` is used only where a full
-userland is required. Both references are overridable by environment
+openSUSE image, it is tiny, and it already carries `wget`, `ip` and `sh`.
+That removes any need to install a package inside a test container, which
+would otherwise require registry access from the container network and
+break the tool rule from the inside. `registry.opensuse.org/opensuse/tumbleweed`
+is used only where a full userland is required, and
+`registry.opensuse.org/opensuse/nginx` only for the network tests that
+need a real TCP/HTTP listener, since the openSUSE busybox build carries
+no `httpd` applet. All three references are overridable by environment
 variable for air-gapped mirrors.
 
 ### Reachability is always TCP, never ICMP
 
 Ping needs either privilege or a permissive `net.ipv4.ping_group_range`,
 which the rootless smoke test cannot assume. Every reachability check is
-therefore a TCP connection against a busybox `httpd` listener, which is
-also a stronger statement than an ICMP echo.
+therefore a TCP connection against an nginx listener, which is also a
+stronger statement than an ICMP echo.
 
 ### SELinux: assert the denial, not just the allow
 

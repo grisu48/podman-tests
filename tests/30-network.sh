@@ -2,10 +2,14 @@
 # Bridge networks: addressing, reachability, name resolution, isolation,
 # port publishing.
 
-HTTPD_CMD='mkdir -p /tmp/www && echo cetest-ok > /tmp/www/index.html && exec httpd -f -p 8080 -h /tmp/www'
+# The opensuse/busybox image is built without the httpd applet, so the
+# listener role uses the opensuse/nginx image instead: seed its default
+# docroot with the fixed payload, then exec nginx itself as the container's
+# main process on its default port.
+SERVER_CMD='echo cetest-ok > /srv/www/htdocs/index.html && exec nginx -g "daemon off;"'
 
 start_listener() {
-  run_bg "$2" --network "$1" "$IMAGE_BUSYBOX" sh -c "$HTTPD_CMD"
+  run_bg "$2" --network "$1" "$IMAGE_NGINX" sh -c "$SERVER_CMD"
 }
 
 free_port() {
@@ -50,15 +54,15 @@ test_reachability_and_name_resolution() {
   engine inspect "$l" --format "{{(index .NetworkSettings.Networks \"$n\").IPAddress}}"
   local ip=$LAST_OUT
 
-  engine run --rm --network "$n" "$IMAGE_BUSYBOX" wget -q -T 5 -O - "http://$ip:8080/"
+  engine run --rm --network "$n" "$IMAGE_BUSYBOX" wget -q -T 5 -O - "http://$ip:80/"
   assert_ok "connect by address" "$LAST_STATUS" || return 1
   assert_eq "payload received unchanged" cetest-ok "$LAST_OUT" || return 1
 
-  engine run --rm --network "$n" "$IMAGE_BUSYBOX" wget -q -T 5 -O - "http://$l:8080/"
+  engine run --rm --network "$n" "$IMAGE_BUSYBOX" wget -q -T 5 -O - "http://$l:80/"
   assert_ok "connect by name" "$LAST_STATUS" || return 1
   assert_eq "payload by name unchanged" cetest-ok "$LAST_OUT" || return 1
 
-  engine run --rm --network "$n" "$IMAGE_BUSYBOX" wget -q -T 5 -O - "http://no-such-$l:8080/"
+  engine run --rm --network "$n" "$IMAGE_BUSYBOX" wget -q -T 5 -O - "http://no-such-$l:80/"
   assert_fail "unknown name does not resolve" "$LAST_STATUS" || return 1
 }
 
@@ -68,14 +72,14 @@ test_network_isolation() {
   engine network create --driver bridge "$n1"
   engine network create --driver bridge "$n2"
   start_listener "$n1" "$l" || { fail_result "listener running" running "$LAST_OUT"; return 1; }
-  engine run --rm --network "$n2" "$IMAGE_BUSYBOX" wget -q -T 5 -O - "http://$l:8080/"
+  engine run --rm --network "$n2" "$IMAGE_BUSYBOX" wget -q -T 5 -O - "http://$l:80/"
   assert_fail "cross-network connection refused" "$LAST_STATUS" || return 1
 }
 
 test_port_publishing() {
   local c port status body; c=$(rname net-pub); track container "$c"
   port=$(free_port) || { fail_result "free port" "an available port" "none found"; return 1; }
-  engine run -d --name "$c" -p "127.0.0.1:${port}:8080" "$IMAGE_BUSYBOX" sh -c "$HTTPD_CMD"
+  engine run -d --name "$c" -p "127.0.0.1:${port}:80" "$IMAGE_NGINX" sh -c "$SERVER_CMD"
   wait_for_state "$c" running 10 || { fail_result "precondition running" running "$LAST_OUT"; return 1; }
 
   if body=$(curl -s --fail --connect-timeout 2 --max-time 5 -w '\n%{http_code}' "http://127.0.0.1:${port}/" 2>/dev/null); then
@@ -88,7 +92,7 @@ test_port_publishing() {
   assert_eq "published port status" 200 "$status" || return 1
   assert_eq "published port body" cetest-ok "$body" || return 1
   engine port "$c"
-  assert_match "engine reports the mapping" "8080.*${port}" "$LAST_OUT" || return 1
+  assert_match "engine reports the mapping" "80/tcp.*${port}" "$LAST_OUT" || return 1
 
   local other; other=$(free_port) || { fail_result "second free port" "an available port" "none found"; return 1; }
   if curl -s -o /dev/null --connect-timeout 2 --max-time 5 "http://127.0.0.1:${other}/"; then
@@ -103,6 +107,6 @@ test_port_publishing() {
     return 1
   fi
   local c2; c2=$(rname net-pub-2); track container "$c2"
-  engine run -d --name "$c2" -p "127.0.0.1:${port}:8080" "$IMAGE_BUSYBOX" sh -c "$HTTPD_CMD"
+  engine run -d --name "$c2" -p "127.0.0.1:${port}:80" "$IMAGE_NGINX" sh -c "$SERVER_CMD"
   assert_ok "host port reusable once free" "$LAST_STATUS" || return 1
 }

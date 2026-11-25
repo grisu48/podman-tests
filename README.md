@@ -17,7 +17,8 @@ the container engine binary under test. It never calls a tool an operator
 would have to install first — `nmap`, `jq`, `socat`, `netcat` and language
 runtimes are all out of scope. The same rule applies inside test
 containers: nothing is installed into them, only what the openSUSE test
-images already ship (busybox's `httpd`, `wget`, `ip`, `sh`).
+images already ship (busybox's `wget`, `ip`, `sh`; nginx's own HTTP server
+for the one scenario that needs a TCP listener).
 
 Every tool the suite needs is declared and checked during preflight, so a
 missing one is reported as `ENVIRONMENT:` with the providing package,

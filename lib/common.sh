@@ -4,6 +4,7 @@
 PREFIX="cetest-$$-"
 IMAGE_BUSYBOX="${CETEST_IMAGE_BUSYBOX:-registry.opensuse.org/opensuse/busybox}"
 IMAGE_TUMBLEWEED="${CETEST_IMAGE_TUMBLEWEED:-registry.opensuse.org/opensuse/tumbleweed}"
+IMAGE_NGINX="${CETEST_IMAGE_NGINX:-registry.opensuse.org/opensuse/nginx}"
 CLEANUP_ITEMS=()
 
 die_env() {
@@ -183,7 +184,7 @@ preflight() {
     exit 2
   fi
 
-  for img in "$IMAGE_BUSYBOX" "$IMAGE_TUMBLEWEED"; do
+  for img in "$IMAGE_BUSYBOX" "$IMAGE_TUMBLEWEED" "$IMAGE_NGINX"; do
     "$RUNTIME" image inspect "$img" >/dev/null 2>&1 && continue
     if [ "$NO_PULL" -eq 1 ]; then
       die_image "$img" "pulling was disabled (--no-pull) and the image is not present locally"
